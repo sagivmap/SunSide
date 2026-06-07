@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SunSide — Which side should you sit?</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/suncalc/1.9.0/suncalc.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #f5f4f0;
+      --surface: #ffffff;
+      --surface2: #f9f8f5;
+      --border: #e5e3dc;
+      --accent: #e8820c;
+      --accent2: #e8450c;
+      --text: #1a1814;
+      --muted: #8c8880;
+      --left: #2563eb;
+      --right: #ea580c;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    /* Ambient glow blobs */
+    body::before, body::after {
+      content: '';
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(140px);
+      pointer-events: none;
+      z-index: 0;
+    }
+    body::before {
+      width: 600px; height: 600px;
+      background: radial-gradient(circle, rgba(232,130,12,0.18) 0%, transparent 70%);
+      top: -150px; right: -150px;
+    }
+    body::after {
+      width: 500px; height: 500px;
+      background: radial-gradient(circle, rgba(232,69,12,0.1) 0%, transparent 70%);
+      bottom: -100px; left: -100px;
+    }
+
+    .wrap {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 500px;
+    }
+
+    /* Header */
+    .header {
+      margin-bottom: 2rem;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .logo-icon {
+      width: 36px; height: 36px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.1rem;
+    }
+
+    .logo-text {
+      font-size: 1.3rem;
+      font-weight: 900;
+      letter-spacing: -0.03em;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .tagline {
+      font-size: 0.8rem;
+      color: var(--muted);
+      letter-spacing: 0.01em;
+    }
+
+    /* Card */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 1.75rem;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.07), 0 1px 4px rgba(0,0,0,0.05);
+    }
+
+    .field { margin-bottom: 1rem; }
+
+    label {
+      display: block;
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 0.4rem;
+    }
+
+    input {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 0.7rem 1rem;
+      font-size: 0.9rem;
+      font-family: inherit;
+      color: var(--text);
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(232,130,12,0.12);
+    }
+
+    input::placeholder { color: var(--muted); }
+
+    input[type="date"], input[type="time"] {
+      color-scheme: light;
+    }
+
+    .divider {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin: 0.25rem 0 1rem;
+      color: var(--muted);
+      font-size: 0.75rem;
+    }
+    .divider::before, .divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+
+    .btn-row { display: grid; grid-template-columns: 1fr auto; gap: 0.625rem; margin-top: 1.25rem; }
+
+    button {
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: #0a0a0f;
+      border: none;
+      border-radius: 10px;
+      padding: 0.75rem 1.25rem;
+      font-size: 0.9rem;
+      font-family: inherit;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity 0.15s, transform 0.1s, box-shadow 0.2s;
+      letter-spacing: 0.01em;
+    }
+
+    button:hover {
+      opacity: 0.9;
+      box-shadow: 0 4px 20px rgba(245,166,35,0.3);
+    }
+    button:active { transform: scale(0.97); }
+
+    .now-btn {
+      background: var(--surface2);
+      color: var(--muted);
+      border: 1px solid var(--border);
+      font-weight: 600;
+      padding: 0.75rem 1rem;
+      white-space: nowrap;
+    }
+    .now-btn:hover { color: var(--text); border-color: var(--accent); box-shadow: none; }
+
+    /* Spinner */
+    .spinner {
+      display: none;
+      text-align: center;
+      padding: 1.25rem;
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
+    .spinner::before {
+      content: '';
+      display: inline-block;
+      width: 16px; height: 16px;
+      border: 2px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      margin-right: 0.5rem;
+      vertical-align: middle;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Error */
+    .error-box {
+      display: none;
+      background: rgba(239,68,68,0.08);
+      border: 1px solid rgba(239,68,68,0.3);
+      border-radius: 10px;
+      padding: 0.875rem 1rem;
+      color: #f87171;
+      font-size: 0.85rem;
+      margin-top: 1rem;
+    }
+
+    /* Result */
+    #result { margin-top: 1.25rem; display: none; }
+
+    .result-box {
+      border-radius: 14px;
+      padding: 1.75rem 1.5rem 1.5rem;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .result-box::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      opacity: 0.06;
+      pointer-events: none;
+    }
+
+    .result-box.left  {
+      background: rgba(59,130,246,0.08);
+      border: 1px solid rgba(59,130,246,0.3);
+    }
+    .result-box.left::before  { background: var(--left); }
+
+    .result-box.right {
+      background: rgba(249,115,22,0.08);
+      border: 1px solid rgba(249,115,22,0.3);
+    }
+    .result-box.right::before { background: var(--right); }
+
+    .result-box.none  {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+    }
+
+    .result-label {
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 0.5rem;
+    }
+
+    .result-side {
+      font-size: 3rem;
+      font-weight: 900;
+      letter-spacing: -0.04em;
+      line-height: 1;
+      margin-bottom: 0.75rem;
+    }
+    .result-box.left  .result-side { color: var(--left); }
+    .result-box.right .result-side { color: var(--right); }
+    .result-box.none  .result-side { color: var(--muted); font-size: 1.8rem; }
+
+    .result-detail {
+      font-size: 0.82rem;
+      color: var(--muted);
+      line-height: 1.6;
+      margin-bottom: 1.25rem;
+    }
+
+    .info-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.5rem;
+    }
+
+    .info-chip {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.5rem 0.75rem;
+      text-align: left;
+    }
+
+    .info-chip .chip-label {
+      font-size: 0.62rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      margin-bottom: 0.15rem;
+    }
+
+    .info-chip .chip-value {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Autocomplete */
+    .autocomplete-wrap { position: relative; }
+
+    .autocomplete-dropdown {
+      position: absolute;
+      top: calc(100% + 6px);
+      left: 0; right: 0;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      box-shadow: 0 16px 40px rgba(0,0,0,0.5);
+      z-index: 100;
+      overflow: hidden;
+      display: none;
+    }
+
+    .autocomplete-item {
+      padding: 0.65rem 1rem;
+      font-size: 0.85rem;
+      color: var(--text);
+      cursor: pointer;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      transition: background 0.1s;
+    }
+
+    .autocomplete-item:last-child { border-bottom: none; }
+    .autocomplete-item:hover,
+    .autocomplete-item.active {
+      background: rgba(232,130,12,0.08);
+      color: var(--accent);
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="header">
+      <div class="logo">
+        <div class="logo-icon">☀️</div>
+        <span class="logo-text">SunSide</span>
+      </div>
+      <p class="tagline">Beat the sun — find the shady side of the bus or car.</p>
+    </div>
+
+    <div class="card">
+      <div class="field">
+        <label>From</label>
+        <div class="autocomplete-wrap">
+          <input type="text" id="origin" placeholder="Dizengoff 50, Tel Aviv" autocomplete="off" />
+          <div class="autocomplete-dropdown" id="origin-dropdown"></div>
+        </div>
+      </div>
+
+      <div class="divider">to</div>
+
+      <div class="field">
+        <label>To</label>
+        <div class="autocomplete-wrap">
+          <input type="text" id="destination" placeholder="Jaffa 1, Jerusalem" autocomplete="off" />
+          <div class="autocomplete-dropdown" id="destination-dropdown"></div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="field">
+          <label>Date</label>
+          <input type="date" id="date" />
+        </div>
+        <div class="field">
+          <label>Departure Time</label>
+          <input type="time" id="time" />
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button onclick="calculate()">Calculate →</button>
+        <button class="now-btn" onclick="setNow()">Now</button>
+      </div>
+
+      <div class="spinner" id="spinner">Looking up locations</div>
+      <div class="error-box" id="error"></div>
+      <div id="result"></div>
+    </div>
+  </div>
+
+  <script>
+    const now = new Date();
+    document.getElementById('date').value = now.toISOString().slice(0, 10);
+    document.getElementById('time').value = now.toTimeString().slice(0, 5);
+
+    // --- Autocomplete ---
+    function setupAutocomplete(inputId, dropdownId) {
+      const input = document.getElementById(inputId);
+      const dropdown = document.getElementById(dropdownId);
+      let timer, activeIndex = -1, currentItems = [];
+
+      async function fetchSuggestions(q) {
+        const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=5&addressdetails=1`;
+        const res = await fetch(url, { headers: { 'Accept-Language': 'en' } });
+        return res.json();
+      }
+
+      function formatLabel(r) {
+        const a = r.address || {};
+        const parts = [];
+        const street = a.road || a.pedestrian || a.path || a.footway || '';
+        const num = a.house_number || '';
+        if (street && num) parts.push(`${street} ${num}`);
+        else if (street) parts.push(street);
+        else if (a.amenity || a.building) parts.push(a.amenity || a.building);
+        const city = a.city || a.town || a.village || a.municipality || a.county || '';
+        if (city) parts.push(city);
+        const country = a.country || '';
+        if (country) parts.push(country);
+        return parts.length ? parts.join(', ') : r.display_name;
+      }
+
+      function renderItems(results) {
+        currentItems = results;
+        activeIndex = -1;
+        if (!results.length) { dropdown.style.display = 'none'; return; }
+        dropdown.innerHTML = results.map((r, i) =>
+          `<div class="autocomplete-item" data-index="${i}">${formatLabel(r)}</div>`
+        ).join('');
+        dropdown.style.display = 'block';
+        dropdown.querySelectorAll('.autocomplete-item').forEach(el => {
+          el.addEventListener('mousedown', e => {
+            e.preventDefault();
+            selectItem(parseInt(el.dataset.index));
+          });
+        });
+      }
+
+      function selectItem(index) {
+        const item = currentItems[index];
+        if (!item) return;
+        const label = formatLabel(item);
+        input.value = label;
+        input._coords = { lat: parseFloat(item.lat), lon: parseFloat(item.lon), name: label.split(',')[0] };
+        dropdown.style.display = 'none';
+      }
+
+      function setActive(index) {
+        const items = dropdown.querySelectorAll('.autocomplete-item');
+        items.forEach(el => el.classList.remove('active'));
+        activeIndex = (index + items.length) % items.length;
+        items[activeIndex]?.classList.add('active');
+      }
+
+      input.addEventListener('input', () => {
+        const q = input.value.trim();
+        input._coords = null;
+        clearTimeout(timer);
+        if (q.length < 2) { dropdown.style.display = 'none'; return; }
+        timer = setTimeout(async () => {
+          try { renderItems(await fetchSuggestions(q)); } catch (_) {}
+        }, 300);
+      });
+
+      input.addEventListener('keydown', e => {
+        if (dropdown.style.display === 'none') return;
+        if (e.key === 'ArrowDown') { e.preventDefault(); setActive(activeIndex + 1); }
+        else if (e.key === 'ArrowUp') { e.preventDefault(); setActive(activeIndex - 1); }
+        else if (e.key === 'Enter' && activeIndex >= 0) { e.stopPropagation(); selectItem(activeIndex); }
+        else if (e.key === 'Escape') { dropdown.style.display = 'none'; }
+      });
+
+      input.addEventListener('blur', () => setTimeout(() => { dropdown.style.display = 'none'; }, 150));
+    }
+
+    setupAutocomplete('origin', 'origin-dropdown');
+    setupAutocomplete('destination', 'destination-dropdown');
+
+    async function geocode(inputId) {
+      const input = document.getElementById(inputId);
+      if (input._coords) return input._coords;
+      const place = input.value.trim();
+      const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(place)}&format=json&limit=1`;
+      const res = await fetch(url, { headers: { 'Accept-Language': 'en' } });
+      const data = await res.json();
+      if (!data.length) throw new Error(`Could not find location: "${place}"`);
+      return { lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon), name: data[0].display_name.split(',')[0] };
+    }
+
+    function bearing(lat1, lon1, lat2, lon2) {
+      const toRad = d => d * Math.PI / 180;
+      const toDeg = r => r * 180 / Math.PI;
+      const dLon = toRad(lon2 - lon1);
+      const y = Math.sin(dLon) * Math.cos(toRad(lat2));
+      const x = Math.cos(toRad(lat1)) * Math.sin(toRad(lat2))
+               - Math.sin(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.cos(dLon);
+      return (toDeg(Math.atan2(y, x)) + 360) % 360;
+    }
+
+    function compassLabel(deg) {
+      const dirs = ['N','NE','E','SE','S','SW','W','NW'];
+      return dirs[Math.round(deg / 45) % 8];
+    }
+
+    async function calculate() {
+      const origin = document.getElementById('origin').value.trim();
+      const destination = document.getElementById('destination').value.trim();
+      const dateVal = document.getElementById('date').value;
+      const timeVal = document.getElementById('time').value;
+
+      const errorEl = document.getElementById('error');
+      const resultEl = document.getElementById('result');
+      const spinner = document.getElementById('spinner');
+
+      errorEl.style.display = 'none';
+      resultEl.style.display = 'none';
+      resultEl.innerHTML = '';
+
+      if (!origin || !destination) {
+        errorEl.textContent = 'Please enter both origin and destination.';
+        errorEl.style.display = 'block';
+        return;
+      }
+
+      spinner.style.display = 'block';
+
+      try {
+        const [from, to] = await Promise.all([geocode('origin'), geocode('destination')]);
+
+        const [h, m] = timeVal.split(':').map(Number);
+        const departureDate = new Date(dateVal);
+        departureDate.setHours(h, m, 0, 0);
+
+        const midLat = (from.lat + to.lat) / 2;
+        const midLon = (from.lon + to.lon) / 2;
+
+        const sunPos = SunCalc.getPosition(departureDate, midLat, midLon);
+        const sunAzimuth = (sunPos.azimuth * 180 / Math.PI + 180 + 360) % 360;
+        const travelBearing = bearing(from.lat, from.lon, to.lat, to.lon);
+        const rel = (sunAzimuth - travelBearing + 360) % 360;
+        const sunElevationDeg = sunPos.altitude * 180 / Math.PI;
+
+        let side, boxClass, detail;
+
+        if (sunElevationDeg < -6) {
+          side = 'No sun';
+          boxClass = 'none';
+          detail = 'The sun is below the horizon at this time — enjoy the ride!';
+        } else if (rel > 170 && rel < 190) {
+          side = 'Either side';
+          boxClass = 'none';
+          detail = `The sun is almost directly ahead (${compassLabel(sunAzimuth)}). Neither window will get hit.`;
+        } else if (rel > 350 || rel < 10) {
+          side = 'Either side';
+          boxClass = 'none';
+          detail = `The sun is almost directly behind you (${compassLabel(sunAzimuth)}). Either side is fine.`;
+        } else if (rel < 180) {
+          side = 'LEFT';
+          boxClass = 'left';
+          detail = `Sun is in the ${compassLabel(sunAzimuth)} (${Math.round(sunElevationDeg)}° elevation), on your right while traveling ${compassLabel(travelBearing)}. Sit left to stay in the shade.`;
+        } else {
+          side = 'RIGHT';
+          boxClass = 'right';
+          detail = `Sun is in the ${compassLabel(sunAzimuth)} (${Math.round(sunElevationDeg)}° elevation), on your left while traveling ${compassLabel(travelBearing)}. Sit right to stay in the shade.`;
+        }
+
+        spinner.style.display = 'none';
+        resultEl.style.display = 'block';
+        resultEl.innerHTML = `
+          <div class="result-box ${boxClass}">
+            <div class="result-label">Best seat</div>
+            <div class="result-side">${side}</div>
+            <p class="result-detail">${detail}</p>
+            <div class="info-grid">
+              <div class="info-chip">
+                <div class="chip-label">From</div>
+                <div class="chip-value">${from.name}</div>
+              </div>
+              <div class="info-chip">
+                <div class="chip-label">To</div>
+                <div class="chip-value">${to.name}</div>
+              </div>
+              <div class="info-chip">
+                <div class="chip-label">Direction</div>
+                <div class="chip-value">${compassLabel(travelBearing)} · ${Math.round(travelBearing)}°</div>
+              </div>
+              <div class="info-chip">
+                <div class="chip-label">Sun</div>
+                <div class="chip-value">${compassLabel(sunAzimuth)} · ${Math.round(sunAzimuth)}°</div>
+              </div>
+            </div>
+          </div>
+        `;
+      } catch (e) {
+        spinner.style.display = 'none';
+        errorEl.textContent = e.message || 'Something went wrong. Please try again.';
+        errorEl.style.display = 'block';
+      }
+    }
+
+    function setNow() {
+      const n = new Date();
+      document.getElementById('date').value = n.toISOString().slice(0, 10);
+      document.getElementById('time').value = n.toTimeString().slice(0, 5);
+    }
+
+    document.addEventListener('keydown', e => { if (e.key === 'Enter') calculate(); });
+  </script>
+</body>
+</html>
